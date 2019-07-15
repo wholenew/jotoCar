@@ -117,7 +117,7 @@ void loop() {
         brake();
     }
     servo.write(steering);
-    delay(10);
+//    delay(10);
 }
 
 // ブレーキ

@@ -1,11 +1,13 @@
 #include <Servo.h>
 #include <Wire.h>
 
-#define R_PWM 6
-#define R_IN 12
-#define L_PWM 5
-#define L_IN 13
-#define STEERING_PWM 3
+#define R_PWM 11
+#define R_IN1 5
+#define R_IN2 6
+#define L_PWM 10
+#define L_IN1 2
+#define L_IN2 4
+#define STEERING_PWM 9
 
 
 int SLAVE_ADDRESS = 0x04;   //I2Cのアドレス『0x04』
@@ -14,6 +16,7 @@ byte value=0;
 int r_pwm = 250;
 int l_pwm = 250;
 int steering = 0;
+int stopFlag=0;
 
 void setup() {
    Serial.begin(9600);
@@ -26,8 +29,10 @@ void setup() {
     //I2Cでリクエスト受信したときに呼び出す関数を登録する 
    Wire.onRequest(RequestMassage);
    
-   pinMode(R_IN, OUTPUT);
-   pinMode(L_IN, OUTPUT);
+   pinMode(R_IN1, OUTPUT);
+   pinMode(L_IN1, OUTPUT);
+   pinMode(R_IN2, OUTPUT);
+   pinMode(L_IN2, OUTPUT);
    pinMode(R_PWM, OUTPUT);
    pinMode(L_PWM, OUTPUT); 
    pinMode(STEERING_PWM, OUTPUT); 
@@ -38,80 +43,92 @@ void setup() {
 }
 
 void loop() {
-  if(Serial.available()>0){
-    value = Serial.read();
-    
     switch(value){
-      case 'forward':
+      case 'f':
         steering = 28; //右2中央28左53
-        l_pwm = 220;
-        r_pwm = 220;
+        l_pwm = 250; //大きいほど強くなる
+        r_pwm = 250;
   
         //左正転
-        digitalWrite(L_IN, LOW);
-        analogWrite(L_PWM, l_pwm);
-  
+        digitalWrite(L_IN1, HIGH);
+        digitalWrite(L_IN2, LOW);
+//        digitalWrite(L_PWM, HIGH);
+//        analogWrite(L_PWM, l_pwm);
         //右正転
-        digitalWrite(R_IN, LOW);
-        analogWrite(R_PWM, r_pwm);
-
+        digitalWrite(R_IN1, HIGH);
+        digitalWrite(R_IN2, LOW);
+//        digitalWrite(R_PWM, HIGH);
+//        analogWrite(R_PWM, r_pwm);
         break;
-      case 'back':
+        
+      case 'b':
         steering = 28; //右2中央28左53
-        l_pwm = 220;
-        r_pwm = 220;
+        l_pwm = 10; //小さいほど強くなる
+        r_pwm = 10;
   
-        //左後転
-        digitalWrite(L_IN, HIGH);
-        analogWrite(L_PWM, l_pwm);
-  
-        //右後転
-        digitalWrite(R_IN, HIGH);
-        analogWrite(R_PWM, r_pwm);
+        //左正転
+        digitalWrite(L_IN1, LOW);
+        digitalWrite(L_IN2, HIGH);
+//        digitalWrite(L_PWM, LOW);
+//        analogWrite(L_PWM, l_pwm);
+        //右正転
+        digitalWrite(R_IN1, LOW);
+        digitalWrite(R_IN2, HIGH);
+//        digitalWrite(R_PWM, LOW);
+//        analogWrite(R_PWM, r_pwm);
 
         break;
         
-      case 'right':
+      case 'r':
         steering = 5; //右2中央28左53
-        l_pwm = 200;
-        r_pwm = 125; //小さいほど強くなる
+        l_pwm = 0;
+        r_pwm = 0; //小さいほど強くなる
 
         //左正転
-        digitalWrite(L_IN, LOW);
-        analogWrite(L_PWM, l_pwm);
-        //右停止
-        digitalWrite(R_IN, HIGH);
-        digitalWrite(R_PWM, HIGH);
+        digitalWrite(L_IN1, HIGH);
+        digitalWrite(L_IN2, LOW);
+//        digitalWrite(L_PWM, HIGH);
+//        analogWrite(L_PWM, l_pwm);
+        //右正転
+        digitalWrite(R_IN1, HIGH);
+        digitalWrite(R_IN2, LOW);
+//        digitalWrite(R_PWM, HIGH);
+//        analogWrite(R_PWM, r_pwm);
         break;
         
-      case 'left':
+      case 'l':
         steering = 53; ////右2中央28左53
-        l_pwm = 125; //小さいほど強くなる
-        r_pwm = 200;
+        l_pwm = 0; //小さいほど強くなる
+        r_pwm = 0;
 
-        //左ブレーキ
-        digitalWrite(L_IN, HIGH);
-        digitalWrite(L_PWM, HIGH);
-  
+        //左正転
+        digitalWrite(L_IN1, HIGH);
+        digitalWrite(L_IN2, LOW);
+//        digitalWrite(L_PWM, HIGH);
+//        analogWrite(L_PWM, l_pwm);
         //右正転
-        digitalWrite(R_IN, LOW);
-        analogWrite(R_PWM, r_pwm);
+        digitalWrite(R_IN1, HIGH);
+        digitalWrite(R_IN2, LOW);
+//        digitalWrite(R_PWM, HIGH);
+//        analogWrite(R_PWM, r_pwm);
         break;
-    }
 
+      case 's':
+        brake();
+    }
     servo.write(steering);
-    delay(1);
-  }else{
-    brake();
-  }
+    delay(10);
 }
 
 // ブレーキ
 void brake() {
-  digitalWrite(L_IN, HIGH);
-  digitalWrite(L_PWM, HIGH);
-  digitalWrite(R_IN, HIGH);
-  digitalWrite(R_PWM, HIGH);
+  digitalWrite(L_IN1, LOW);
+  digitalWrite(L_IN2, LOW);
+//  digitalWrite(L_PWM, HIGH);
+  
+  digitalWrite(R_IN1, LOW);
+  digitalWrite(R_IN2, LOW);
+//  digitalWrite(R_PWM, HIGH);
 
 }
 
@@ -119,9 +136,10 @@ void brake() {
 void ReceiveMassage(int n){
   char cmd = Wire.read();     //文字を読む
   Serial.println(cmd);       //シリアルポートにcmdを出力し表示する
+  value=cmd;
 }
 
 //リクエスト要求を受けたときに「A」を送信する。
 void RequestMassage(){
-  Wire.write("A");            //Aを送信
+//  Wire.write("A");            //Aを送信
 }
